@@ -1,174 +1,240 @@
+
+//
+//  GameViewMode.swift
+//  ios1024
+//
+//  Created by Hans Dulimarta for CIS357
+//
 import SwiftUI
-
-enum SwipeDirection {
-    case up, down, left, right, none
-}
-
 class GameViewModel: ObservableObject {
-    @Published var grid: [[Int]]
-    @Published var validSwipes: Int = 0
-    @Published var gameStatus: String = "In Progress"
+    @Published var grid: Array<Array<Int>>
+    // Holds previous board state
+    private var previousGrid: [Int] = []
+    // Define a goal value for winning the game
+    private var goalValue: Int = 1024
+    // non-private game vars
+    var playerWin: Bool = false
+    var gameOver: Bool = false
+    var swipeCounter: Int = 0
     
-    let size: Int = 4
-
-    // Initialize game state
-    init() {
-        self.grid = createEmptyGrid()
-        placeRandomNumber()
+    init () {
+        grid = Array(repeating: Array(repeating: 0, count: 4), count: 4)
+        insertRandom()
     }
-
-    // Create an empty grid
-    func createEmptyGrid() -> [[Int]] {
-        return Array(repeating: Array(repeating: 0, count: size), count: size)
+    
+    func colorForNumber(_ number: Int) -> Color {
+            switch number {
+            case 0:
+                return Color.gray.opacity(0.3) // Empty cell (0)
+            case 2:
+                return Color(red: 238/255, green: 228/255, blue: 218/255) // Light gray (2)
+            case 4:
+                return Color(red: 237/255, green: 224/255, blue: 200/255) // Light yellow (4)
+            case 8:
+                return Color(red: 255/255, green: 176/255, blue: 101/255) // Light orange (8)
+            case 16:
+                return Color(red: 255/255, green: 127/255, blue: 39/255) // Red (16)
+            case 32:
+                return Color(red: 255/255, green: 103/255, blue: 63/255) // Dark red (32)
+            case 64:
+                return Color(red: 255/255, green: 93/255, blue: 35/255) // Dark orange (64)
+            case 128:
+                return Color(red: 242/255, green: 85/255, blue: 36/255) // Light red (128)
+            case 256:
+                return Color(red: 237/255, green: 204/255, blue: 97/255) // Greenish-yellow (256)
+            case 512:
+                return Color(red: 237/255, green: 204/255, blue: 58/255) // Blue (512)
+            case 1024:
+                return Color(red: 237/255, green: 179/255, blue: 39/255) // Purple (1024)
+            case 2048:
+                return Color(red: 253/255, green: 220/255, blue: 62/255) // Gold (2048)
+            default:
+                return Color.black // Default for unknown values (shouldn't happen)
+            }
+        }
+    /// Will put the 2-d array into 1-d array
+    func flattenGrid() -> [Int] {
+        grid.flatMap { $0 }
     }
-
-    // Reset the game
+    
+    /// Get the state of the grid in a 1-d array
+    func updatePreviousGrid() {
+        previousGrid = flattenGrid()
+    }
+    
+    /// Combines adjacent numbers on swipe
+    func combineAdjacent(_ currentLine: inout [Int]) {
+        var i = 0
+        
+        // While you are not at the end of the line
+        while i < currentLine.count - 1 {
+            // if it is a 0 (blank space) increment i
+            if currentLine[i] == 0 {
+                i+=1
+                continue
+            }
+            
+            // if the space we are looking at is identical to the next; combine
+            if currentLine[i] == currentLine[i+1] {
+                currentLine[i] = currentLine[i] * 2
+                currentLine.remove(at: i + 1)
+                currentLine.append(0)
+            }
+            i+=1
+        }
+    }
+    
+    /// Main game logic
+    func handleSwipe(_ direction: SwipeDirection) {
+        // Allow updates only if the player did not win and not game over
+        guard !playerWin else { return }
+        guard !gameOver else { return }
+        
+        // Get the previous grid state
+        updatePreviousGrid()
+        
+        // Define vertical swipes and reverse swipes (logic is the same for up/down and left/right); just reversed
+        let verticalSwipe = direction == .up || direction == .down
+        let reverseSwipe = direction == .down || direction == .right
+        
+        // Loop over the grid and get the current line (either horizontal or vertical)
+        for i in 0..<grid.count {
+            var currentLine = [Int]()
+            
+            for j in 0..<grid.count {
+                if verticalSwipe {
+                    currentLine.append(grid[j][i])
+                } else {
+                    currentLine.append(grid[i][j])
+                }
+            }
+        
+            // Flip if needed
+            if reverseSwipe {
+                currentLine.reverse()
+            }
+            
+            // Remove all the 0's and combine all the like numbers
+            currentLine.removeAll() { $0 == 0 }
+            combineAdjacent(&currentLine)
+            
+            // Append 0 (blanks) to ensure the row/col is back to the same size
+            while currentLine.count < grid.count {
+                currentLine.append(0)
+            }
+            
+            // reverse it back if needed
+            if reverseSwipe {
+                currentLine.reverse()
+            }
+            
+            // Put back the row/col where you got it from
+            for j in 0..<grid.count {
+                if verticalSwipe {
+                    grid[j][i] = currentLine[j]
+                } else {
+                    grid[i][j] = currentLine[j]
+                }
+            }
+        }
+        // If something changed then insert the random new cell and increment the swipe count
+        if flattenGrid() != previousGrid {
+            insertRandom()
+            incrementSwipeCount()
+        }
+        
+        // Ensure the game has not been won/lost
+        checkWinCondition()
+        
+        if isGameOver() {
+            gameOver = true
+            endGame()
+        } else if playerWin == true {
+            endGame()
+        }
+    }
+    
+    /// Increments the swipe count for the user
+    func incrementSwipeCount() {
+        swipeCounter += 1
+    }
+    
+    /// Resets the game to the starting state and resets the player state variables
     func resetGame() {
-        grid = createEmptyGrid()
-        placeRandomNumber()
-        validSwipes = 0
-        gameStatus = "In Progress"
+        // Will reinitialize the array and insert one random cell, reset needed vars
+        grid = Array(repeating: Array(repeating: 0, count: 4), count: 4)
+        insertRandom()
+        playerWin = false
+        gameOver = false
+        swipeCounter = 0
     }
-
-    // Insert a random number (2 or 4) into an empty spot
-    func placeRandomNumber() {
-        var emptyCells: [(Int, Int)] = []
-        for row in 0..<size {
-            for col in 0..<size {
-                if grid[row][col] == 0 {
-                    emptyCells.append((row, col))
+    
+    /// Used for getting all information needed for the game statistics screen
+    func endGame() {
+        // TODO: Later when I implement settings screen I will use this
+    }
+    
+    /// Will put either a 2 or 4 on the game board in a random spot
+    func insertRandom() {
+        // Create a list of tuples
+        var emptyCells = [(Int, Int)]()
+        
+        // Loop over the grid and append the empty grid coordinates to my emptyCells list
+        for i in 0..<grid.count {
+            for j in 0..<grid[i].count{
+                if grid[i][j] == 0 {
+                    emptyCells.append((i, j))
                 }
             }
         }
         
-        if let randomCell = emptyCells.randomElement() {
-            grid[randomCell.0][randomCell.1] = (Bool.random() ? 2 : 4)
+        // If the list is not empty pick a random cell and put a 2 or 4 in it
+        if !emptyCells.isEmpty {
+            // Pick a random cell
+            let randomCell = emptyCells.randomElement()!
+            // Put a 2 or 4 in there
+            let value = Int.random(in: 0..<10) < 8 ? 2 : 4
+            // Put it in the grid
+            grid[randomCell.0][randomCell.1] = value
+            
         }
     }
-
-    // Handle swipe action (up, down, left, right)
-    func handleSwipe(_ direction: SwipeDirection) {
-        let previousGrid = grid // Store previous grid for change detection
-        switch direction {
-        case .up:
-            swipeUp()
-        case .down:
-            swipeDown()
-        case .left:
-            swipeLeft()
-        case .right:
-            swipeRight()
-        case .none:
-            break
-        }
-
-        // Only insert a new number if the board has changed
-        if grid != previousGrid {
-            placeRandomNumber()
-            validSwipes += 1
-        }
-
-        checkForWin()
-        checkForGameOver()
-    }
-
-    // Swipe actions (up, down, left, right)
-    func swipeUp() {
-        for col in 0..<size {
-            var column = grid.map { $0[col] } // Extract column
-            column = swipeColumn(column)
-            for row in 0..<size {
-                grid[row][col] = column[row]
+    
+    /// Will check to see if the user won the game or not
+    func checkWinCondition() {
+        // Loop over grid, if one contains the goal; player won
+        for i in 0..<grid.count {
+            for j in 0..<grid[i].count {
+                if grid[i][j] == goalValue {
+                    playerWin = true
+                    return
+                }
             }
         }
     }
-
-    func swipeDown() {
-        for col in 0..<size {
-            var column = grid.map { $0[col] }
-            column = swipeColumn(column.reversed()).reversed()
-            for row in 0..<size {
-                grid[row][col] = column[row]
+    
+    /// Will check to see if there is a valid move left or if the player lost
+    func isGameOver() -> Bool {
+        // Loop over grid; if there is a blank the game is not over
+        for i in 0..<grid.count {
+            for j in 0..<grid[i].count {
+                if grid[i][j] == 0 {
+                    return false
+                }
             }
         }
-    }
-
-    func swipeLeft() {
-        for row in 0..<size {
-            grid[row] = swipeColumn(grid[row])
-        }
-    }
-
-    func swipeRight() {
-        for row in 0..<size {
-            grid[row] = swipeColumn(grid[row].reversed()).reversed()
-        }
-    }
-
-    // Swipe logic for a single row or column (merging cells)
-    func swipeColumn(_ values: [Int]) -> [Int] {
-        var newValues = values.filter { $0 != 0 } // Remove zeros
-        var result = [Int](repeating: 0, count: size)
         
-        var i = 0
-        while i < newValues.count {
-            if i + 1 < newValues.count && newValues[i] == newValues[i + 1] {
-                result[i] = newValues[i] * 2
-                i += 2 // Skip the next number as it was merged
-            } else {
-                result[i] = newValues[i]
-                i += 1
-            }
-        }
-        return result
-    }
-
-    // Detect if the game is won
-    func checkForWin() {
-        for row in grid {
-            if row.contains(2048) {
-                gameStatus = "WIN"
-                return
-            }
-        }
-    }
-
-    // Detect game over condition
-    func checkForGameOver() {
-        if gridIsFull() && !canMerge() {
-            gameStatus = "LOSE"
-        }
-    }
-
-    // Check if the grid is full
-    func gridIsFull() -> Bool {
-        for row in grid {
-            if row.contains(0) {
-                return false
+        // Loop over grid; if there are 2 cells next to one another that are the same; game not over
+        for i in 0..<grid.count {
+            for j in 0..<grid[i].count {
+                if j < grid[i].count - 1 && grid[i][j] == grid[i][j+1] {
+                    return false
+                }
+                if i < grid.count - 1 && grid[i][j] == grid[i+1][j] {
+                    return false
+                }
             }
         }
         return true
-    }
-
-    // Check if there are any possible merges left
-    func canMerge() -> Bool {
-        // Check for possible merges in rows and columns
-        for row in grid {
-            for i in 0..<size - 1 {
-                if row[i] == row[i + 1] {
-                    return true
-                }
-            }
-        }
-        
-        for col in 0..<size {
-            for row in 0..<size - 1 {
-                if grid[row][col] == grid[row + 1][col] {
-                    return true
-                }
-            }
-        }
-        
-        return false
     }
 }

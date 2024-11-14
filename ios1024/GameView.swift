@@ -7,52 +7,53 @@
 
 import SwiftUI
 
-struct GameView: View {
-    @State var swipeDirection: SwipeDirection? = .none
-    @StateObject var viewModel: GameViewModel = GameViewModel()
 
+struct GameView: View {
+
+    @State var swipeDirection: SwipeDirection? = Optional.none
+    @StateObject var viewModel: GameViewModel = GameViewModel()
     var body: some View {
         VStack {
-            // Header with your name
             Text("Welcome to 1024 by Shawn Chov!").font(.title2)
-
-            // Display number of valid swipes and game status
-            HStack {
-                Text("Valid Swipes: \(viewModel.validSwipes)")
-                Spacer()
-                Text(viewModel.gameStatus).font(.headline)
-            }
-            .padding()
-
-            // Number grid for displaying the board
             NumberGrid(viewModel: viewModel)
                 .gesture(DragGesture().onEnded {
                     swipeDirection = determineSwipeDirection($0)
-                    viewModel.handleSwipe(swipeDirection ?? .none)
+                    viewModel.handleSwipe(swipeDirection!)
                 })
                 .padding()
                 .frame(
                     maxWidth: .infinity
                 )
-
-            if let swipeDirection {
-                Text("You swiped \(swipeDirection)")
+            
+            // Display win message
+            if viewModel.playerWin {
+                Text("You win!").font(.largeTitle).foregroundColor(.green)
             }
-
-            // RESET Button
-            Button(action: {
-                viewModel.resetGame()
-            }) {
-                Text("Reset Game")
-                    .font(.title2)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+            
+            // Display lose message
+            if viewModel.gameOver {
+                Text("You lost!").font(.largeTitle).foregroundStyle(.red)
             }
-            .padding(.top)
-        }
-        .frame(maxHeight: .infinity, alignment: .top)
+            
+            // Added Reset Button and swipe counter information
+            HStack {
+                Button("Reset") {
+                    viewModel.resetGame()
+                }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                
+                // Puts space between the reset button and the swipe counter info
+                Spacer()
+                
+                Text("Swipe Counter: \(viewModel.swipeCounter)")
+            }
+            .padding(.horizontal)
+            
+            
+        }.padding(.all).frame(maxHeight: .infinity, alignment: .top)
     }
 }
 
@@ -66,11 +67,14 @@ struct NumberGrid: View {
                 HStack(spacing: 4) {
                     ForEach(0..<size, id: \.self) { column in
                         let cellValue = viewModel.grid[row][column]
-                        Text("\(cellValue != 0 ? "\(cellValue)" : "")")
+                        let cellColor = viewModel.colorForNumber(cellValue) // Get the color for the current number
+                        
+                        Text(cellValue == 0 ? "" : "\(cellValue)") // Only display something if not zero
                             .font(.system(size: 26))
+                            .foregroundColor(.black) // Text color
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .aspectRatio(CGSize(width: 1, height: 1), contentMode: .fit)
-                            .background(cellValue == 0 ? Color.gray.opacity(0.2) : Color.white)
+                            .background(cellColor) // Set the background color based on the number
                             .cornerRadius(10)
                     }
                 }
@@ -81,6 +85,7 @@ struct NumberGrid: View {
     }
 }
 
+
 func determineSwipeDirection(_ swipe: DragGesture.Value) -> SwipeDirection {
     if abs(swipe.translation.width) > abs(swipe.translation.height) {
         return swipe.translation.width < 0 ? .left : .right
@@ -88,6 +93,7 @@ func determineSwipeDirection(_ swipe: DragGesture.Value) -> SwipeDirection {
         return swipe.translation.height < 0 ? .up : .down
     }
 }
+
 
 #Preview {
     GameView()
