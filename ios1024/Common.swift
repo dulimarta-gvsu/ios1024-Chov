@@ -6,7 +6,10 @@
 //
 
 enum SwipeDirection {
+<<<<<<< Updated upstream
 //    case none
+=======
+>>>>>>> Stashed changes
     case left
     case right
     case up
