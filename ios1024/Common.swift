@@ -6,7 +6,8 @@
 //
 
 enum SwipeDirection {
-    case none
+//    case none
+
     case left
     case right
     case up

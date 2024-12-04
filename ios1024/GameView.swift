@@ -9,12 +9,16 @@ import SwiftUI
 
 
 struct GameView: View {
-
-    @State var swipeDirection: SwipeDirection? = Optional.none
-    @StateObject var viewModel: GameViewModel = GameViewModel()
+    // Tracks swipe dir
+    @State var swipeDirection: SwipeDirection? = .none
+    @EnvironmentObject var viewModel: GameViewModel
+    @EnvironmentObject var navi: Navigation
+    
     var body: some View {
         VStack {
-            Text("Welcome to 1024 by Shawn Chov!").font(.title2)
+            Text("Welcome to 1024 by Shawn Chov").font(.title2)
+            
+            // Displays the grid and adds swipe gesture
             NumberGrid(viewModel: viewModel)
                 .gesture(DragGesture().onEnded {
                     swipeDirection = determineSwipeDirection($0)
@@ -22,8 +26,21 @@ struct GameView: View {
                 })
                 .padding()
                 .frame(
-                    maxWidth: .infinity
+                    maxWidth: .infinity // Grid fills entire width of screen
                 )
+            
+            // All buttons
+            HStack {
+                Button("Logout") {
+                    navi.backHome()
+                }
+                Button("Settings") {
+                    navi.navigate(to: .SettingsDestination)
+                }
+                Button("Statistics") {
+                    navi.navigate(to: .StatisticDestination)
+                }
+            }.buttonStyle(.borderedProminent)
             
             // Display win message
             if viewModel.playerWin {
@@ -32,7 +49,7 @@ struct GameView: View {
             
             // Display lose message
             if viewModel.gameOver {
-                Text("You lost!").font(.largeTitle).foregroundStyle(.red)
+                Text("You lose!").font(.largeTitle).foregroundStyle(.red)
             }
             
             // Added Reset Button and swipe counter information
@@ -41,51 +58,52 @@ struct GameView: View {
                     viewModel.resetGame()
                 }
                 .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
+                .background(Color.gray) 
+                .foregroundColor(.white) 
+                .cornerRadius(5) 
                 
-                // Puts space between the reset button and the swipe counter info
                 Spacer()
                 
-                Text("Swipe Counter: \(viewModel.swipeCounter)")
+                Text("Swipe Count: \(viewModel.swipeCounter)")
             }
             .padding(.horizontal)
             
-            
-        }.padding(.all).frame(maxHeight: .infinity, alignment: .top)
+        }.padding(.all).frame(maxHeight: .infinity, alignment: .top) // align vstack to top
     }
 }
 
+// The main game grid
 struct NumberGrid: View {
+    // Observes the changes from GameViewModel to update the UI
     @ObservedObject var viewModel: GameViewModel
-    let size: Int = 4
 
     var body: some View {
-        VStack(spacing: 4) {
+        let size = viewModel.grid.count // Get grid size from GVM
+        VStack(spacing:4) {
+            // Loop through the rows in the grid
             ForEach(0..<size, id: \.self) { row in
-                HStack(spacing: 4) {
+                HStack (spacing:4) {
+                    // Loop through the cols in the grid
                     ForEach(0..<size, id: \.self) { column in
                         let cellValue = viewModel.grid[row][column]
-                        let cellColor = viewModel.colorForNumber(cellValue) // Get the color for the current number
-                        
-                        Text(cellValue == 0 ? "" : "\(cellValue)") // Only display something if not zero
-                            .font(.system(size: 26))
-                            .foregroundColor(.black) // Text color
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .aspectRatio(CGSize(width: 1, height: 1), contentMode: .fit)
-                            .background(cellColor) // Set the background color based on the number
-                            .cornerRadius(10)
+                        // Display the value in the cell if it isn't 0
+                        Text(cellValue == 0 ? "" : "\(cellValue)")
+                            .font(.system(size:26))
+                            .foregroundColor(.black) // Black Text
+                            .frame(maxWidth: .infinity, maxHeight: .infinity) // Cell fills entire space
+                            .aspectRatio(CGSize(width: 1, height: 1), contentMode: .fit) // 1:1 aspect ratio
+                            .background(Color.white) // Background white
+                            .cornerRadius(10) // Round corners
                     }
                 }
             }
         }
         .padding(4)
-        .background(Color.gray.opacity(0.4))
+        .background(Color.gray.opacity(0.4)) // Covers the grid, but can still see the numbers
     }
 }
 
-
+/// Determines the dir of swipe
 func determineSwipeDirection(_ swipe: DragGesture.Value) -> SwipeDirection {
     if abs(swipe.translation.width) > abs(swipe.translation.height) {
         return swipe.translation.width < 0 ? .left : .right
