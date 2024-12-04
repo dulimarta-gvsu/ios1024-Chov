@@ -10,13 +10,9 @@ import FirebaseFirestore
 
 // Main view for game logic
 class GameViewModel: ObservableObject {
-    // Current board state
     @Published var grid: Array<Array<Int>>
-    // Holds previous board state
     private var previousGrid: [Int] = []
-    // Define a goal value for winning the game
     @Published var goalValue: Int
-    // non-private game vars
     var playerWin: Bool = false
     var gameOver: Bool = false
     var swipeCounter: Int = 0
@@ -38,6 +34,37 @@ class GameViewModel: ObservableObject {
         self.goalValue = goal
     }
     
+ func colorForNumber(_ number: Int) -> Color {
+            switch number {
+            case 0:
+                return Color.gray.opacity(0.3) // Empty cell (0)
+            case 2:
+                return Color(red: 238/255, green: 228/255, blue: 218/255) // Light gray (2)
+            case 4:
+                return Color(red: 237/255, green: 224/255, blue: 200/255) // Light yellow (4)
+            case 8:
+                return Color(red: 255/255, green: 176/255, blue: 101/255) // Light orange (8)
+            case 16:
+                return Color(red: 255/255, green: 127/255, blue: 39/255) // Red (16)
+            case 32:
+                return Color(red: 255/255, green: 103/255, blue: 63/255) // Dark red (32)
+            case 64:
+                return Color(red: 255/255, green: 93/255, blue: 35/255) // Dark orange (64)
+            case 128:
+                return Color(red: 242/255, green: 85/255, blue: 36/255) // Light red (128)
+            case 256:
+                return Color(red: 237/255, green: 204/255, blue: 97/255) // Greenish-yellow (256)
+            case 512:
+                return Color(red: 237/255, green: 204/255, blue: 58/255) // Blue (512)
+            case 1024:
+                return Color(red: 237/255, green: 179/255, blue: 39/255) // Purple (1024)
+            case 2048:
+                return Color(red: 253/255, green: 220/255, blue: 62/255) // Gold (2048)
+            default:
+                return Color.black // Default for unknown values (shouldn't happen)
+            }
+        }
+
     /// Will put the 2-d array into 1-d array
     func flattenGrid() -> [Int] {
         grid.flatMap { $0 }
