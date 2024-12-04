@@ -19,6 +19,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
   }
 }
 
+
 @main
 struct ios1024App: App {
     // Attach the AppDelegate to main app

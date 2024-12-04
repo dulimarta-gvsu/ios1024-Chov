@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+
 struct GameView: View {
     // Tracks swipe dir
     @State var swipeDirection: SwipeDirection? = .none
