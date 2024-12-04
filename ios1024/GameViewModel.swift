@@ -1,34 +1,4 @@
-<<<<<<< Updated upstream
 //
-//  GameViewMode.swift
-//  ios1024
-//
-//  Created by Hans Dulimarta for CIS357
-//
-import SwiftUI
-class GameViewModel: ObservableObject {
-    @Published var grid: Array<Array<Int>>
-    init () {
-        grid = Array(repeating: Array(repeating: 0, count: 4), count: 4)
-    }
-    
-    func handleSwipe(_ direction: SwipeDirection) {
-        let fillValue = switch(direction) {
-        case .left:  1
-        case .right:  2
-        case .up:  3
-        case .down:  4
-        }
-        
-        for r in 0 ..< grid.count {
-            for c in 0 ..< grid[r].count {
-                grid[r][c] = fillValue
-            }
-        }
-    }
-}
-=======
-
 //  GameViewMode.swift
 //  ios1024
 //
@@ -204,7 +174,7 @@ class GameViewModel: ObservableObject {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         let db = Firestore.firestore()
         // Reference to where I am saving the games in firebase
-        let userGamesRef = db.collection("users").document(userId).collection("games")
+        let userGamesRef = db.collection("players").document(userId).collection("statistics")
         
         // Game data to be saved
         let gameData: [String: Any] = [
@@ -289,4 +259,3 @@ class GameViewModel: ObservableObject {
         return true
     }
 }
->>>>>>> Stashed changes

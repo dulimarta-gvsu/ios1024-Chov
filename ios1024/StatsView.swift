@@ -74,7 +74,7 @@ struct StatsView: View {
         let db = Firestore.firestore()
 
         // Reference the user's games sub-collection
-        let userGamesRef = db.collection("users").document(userId).collection("games")
+        let userGamesRef = db.collection("players").document(userId).collection("statistics")
         
         userGamesRef.getDocuments { (querySnapshot, error) in
             if let error = error {

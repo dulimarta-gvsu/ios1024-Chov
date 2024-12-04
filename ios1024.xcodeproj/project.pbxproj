@@ -406,8 +406,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-<<<<<<< Updated upstream
-=======
 
 /* Begin XCRemoteSwiftPackageReference section */
 		02D679B22CE637AF004CA982 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
@@ -532,7 +530,7 @@
 			productName = FirebaseStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
->>>>>>> Stashed changes
+
 	};
 	rootObject = 15A11AAB2CD30B37004C5A77 /* Project object */;
 }

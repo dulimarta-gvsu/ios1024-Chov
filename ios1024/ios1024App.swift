@@ -8,8 +8,7 @@
 import SwiftUI
 import FirebaseCore
 
-<<<<<<< Updated upstream
-=======
+
 /// Hanldes application level config
 class AppDelegate: NSObject, UIApplicationDelegate {
   // Runs when the application launches
@@ -20,7 +19,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
   }
 }
 
->>>>>>> Stashed changes
 @main
 struct ios1024App: App {
     // Attach the AppDelegate to main app
